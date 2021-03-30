@@ -36,6 +36,7 @@ minHeap* create_minHeap(unsigned int heapSize) {
 	mH->nodes = malloc(sizeof(hash*) * heapSize);
 	mH->size = heapSize;
 	mH->count = 0;
+	return mH;
 }
 
 //helper function to create key/count pair into the hashtable
@@ -113,6 +114,21 @@ void insert_to_minheap(minHeap *mh, hash *word) {
 	}
 }
 
+//if 2 words have the same hash, this function will handle the collision with linear probing
+void handle_collision(hashtable *ht, char *key, unsigned int slot){
+	unsigned int new_slot;
+	for(int i = 1; i < TABLESIZE - 1; ++i){
+		new_slot = (slot + i) % TABLESIZE;
+		if (ht->hashes[new_slot] == NULL){
+			ht->hashes[new_slot] = ht_helper(key, 1);
+			break;
+		}else if(strcmp(key, ht->hashes[new_slot]->key) == 0){
+			ht->hashes[new_slot]->count += 1;
+			break;
+		}
+	}
+}
+
 //check if the word is already in the hashtable, add count if it is, else add the word
 void check_word(hashtable *ht, char *key){
 	unsigned int slot = hashCode(key);
@@ -121,7 +137,11 @@ void check_word(hashtable *ht, char *key){
 		ht->hashes[slot] = ht_helper(key, 1);
 	}
 	else {
-		ht->hashes[slot]->count += 1;
+		if (strcmp(key, ht->hashes[slot]->key) != 0){
+			handle_collision(ht, key, slot);
+	    }else{
+			ht->hashes[slot]->count += 1;
+		}
 	}
 }
 
